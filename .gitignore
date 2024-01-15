@@ -1,0 +1,6 @@
+.vscode
+bin/
+lib/
+test/
+buid/
+*.log
