@@ -107,6 +107,9 @@ int main(int argc, char *argv[]) {
 				// read line
 				char line_buffer[LINE_BUFFER_SIZE] = {0};
 
+				//TODO: remove debug mode
+				fprintf(stderr, ANSI_YELLOW "[WARNING] Carnivore is on debug mode, type exit to exit.\n" ANSI_RESET);
+
 				while(1){
 					fprintf(stdout, "carnivore> ");
 					fgets(line_buffer, LINE_BUFFER_SIZE, stdin);
@@ -115,7 +118,7 @@ int main(int argc, char *argv[]) {
 						return 0;
 					}
 					Token *tokens = carnivore_tokenize(line_buffer);
-					carnivore_debug_tokens(tokens);
+					carnivore_debug_tokens(tokens); // debug mode
 					token_finish();
 					line_buffer[0] = 0;
 				}

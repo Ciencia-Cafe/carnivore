@@ -278,6 +278,35 @@ Token
 			continue;
 		}
 
+		if(head[0] == '"' && head[1] != '\n'){
+			char const* str_start = head;
+			do{
+				++head;
+				if(head[0] == '\\' && head[1] == '"'){
+					head += 2;
+					continue;
+				}
+				if(head[0] == '\n'){
+					//TODO: debug mode flag and multiline strings
+					assert(0 && "carnivore is WIP and debug mode is activated");
+					break;
+				}
+
+			}while(
+				head[0] != '"'
+			);
+			char const* str_end = head;
+
+			Token tok = {
+				.type = TYPE_STR,
+				.start = str_start,
+				.end = str_end
+			};
+			token_push(&result, tok);
+			++head;
+			continue;
+		}
+
 		if(
 			(head[0] >= 'A' && head[0] <= 'Z') ||
 			(head[0] >= 'a' && head[0] <= 'z') ||
