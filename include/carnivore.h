@@ -38,14 +38,23 @@ typedef enum {
 	DOT,
 	MINUS,
 	PLUS,
+	COLON,
 	SEMICOLON,
-	SLASH,
+	SLASH,				/* /  */
+	BACK_SLASH,			/* \ */
+	BACK_TICK,
+	AMPERSAND,			// &
 	STAR,
 	EQUAL,
 	BANG,
 	GREATER,
 	LESS,
-
+	SINGLE_QUOTE,
+	DOUBLE_QUOTE,
+	AT_SIGN,			// @
+	HASH_SIGN,			// #
+	DOLLAR_SIGN,		// $
+	PERCENT_SIGN,		// %
 	// Two character operators
 	EQUAL_EQUAL,
 	BANG_EQUAL,
@@ -95,14 +104,24 @@ static const Lexn g_lexiom[] = {
 	{DOT,			"."},
 	{MINUS,			"-"},
 	{PLUS,			"+"},
+	{COLON, 		":"},
 	{SEMICOLON,		";"},
 	{SLASH,			"/"},
+	{BACK_SLASH,	"\\"},
+	{BACK_TICK,		"`"},
+	{AMPERSAND,		"&"},
 	{STAR,			"*"},
 
 	{EQUAL,			"="},
 	{BANG,			"!"},
 	{GREATER,		">"},
 	{LESS,			"<"},
+	{SINGLE_QUOTE,	"'"},
+	{DOUBLE_QUOTE,	"\""},
+	{AT_SIGN,		"@"},
+	{HASH_SIGN,		"#"},		
+	{DOLLAR_SIGN,	"$"},
+	{PERCENT_SIGN,	"%"},
 
 	{EQUAL_EQUAL,	"=="},
 	{BANG_EQUAL,	"!="},
@@ -382,6 +401,33 @@ Token
 				break;
 			case ';':
 				op_type = SEMICOLON;
+				break;
+			case '\\':
+				op_type = BACK_SLASH;
+				break;
+			case '\'':
+				op_type = SINGLE_QUOTE;
+				break;
+			case '"':
+				op_type = DOUBLE_QUOTE;
+				break;
+			case '@':
+				op_type = AT_SIGN;
+				break;
+			case '`':
+				op_type = BACK_TICK;
+				break;
+			case '&':
+				op_type = AMPERSAND;
+				break;
+			case '#':
+				op_type = HASH_SIGN;
+				break;
+			case '$':
+				op_type = DOLLAR_SIGN;
+				break;
+			case '%':
+				op_type = PERCENT_SIGN;
 				break;
 			
 		}
