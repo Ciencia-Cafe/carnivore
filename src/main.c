@@ -11,7 +11,7 @@ void puts_err(const char* msg){
 
 void print_help(void){
 	char *help =
-	"Carnivore is an exoteric programming language that works with .meat files\t\n"
+	"Carnivore is a programming language that works with .meat files\t\n"
 	"carnivore FILE\n"
 	"OR\n"
 	"carnivore <option>\n"

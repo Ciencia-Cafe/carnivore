@@ -1,7 +1,7 @@
 #ifndef _CARNIVORE_H
 #define _CARNIVORE_H
 
-#include "../include/slices.h"
+#include "slices.h"
 
 #include <stdio.h>
 #include <stdint.h>
