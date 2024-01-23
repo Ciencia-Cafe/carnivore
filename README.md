@@ -1,4 +1,4 @@
-#<img src="carnivore-logo.svg" alt="drawing" width="60" hight="60"/> Carnivore
+# <img src="carnivore-logo.svg" alt="drawing" width="60" hight="60"/> Carnivore
 Carnivore is a simple scripting language based in [toml](https://toml.io/en/).
 
 ## Work in progress
