@@ -12,7 +12,7 @@ Carnivore is a simple scripting language based in [toml](https://toml.io/en/).
 ## Development rules
 * General:
 	* keep the code clean
-	* identation style is [K&R](https://en.wikipedia.org/wiki/Indentation_style#K&R_style)
+	* identation style is [K&R](https://en.wikipedia.org/wiki/Indentation_style#K&R_style) (Variant 1TBS)
 * Carnivore function names: `carnivore_<what_it_does>` (snake_case)
 * Types:
 	* types are CamelCase: `typedef int Int`

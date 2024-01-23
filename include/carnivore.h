@@ -27,6 +27,9 @@ typedef enum {
 	TYPE_TYPE,
 	TYPE_ARG,
 
+	// Line initialization token
+	LINE_INIT,
+
 	// Single character tokens
 	LEFT_BRACKET,			//[]
 	RIGHT_BRACKET,
@@ -93,6 +96,8 @@ static const Lexn g_lexiom[] = {
 	{TYPE_LIST, 	"list"},
 	{TYPE_TYPE, 	"type"},
 	{TYPE_ARG, 		"arg"},
+
+	{LINE_INIT, 	"line init"},
 
 	{LEFT_BRACKET, 	"["},
 	{RIGHT_BRACKET,	"]"},
@@ -170,7 +175,7 @@ void carnivore_run(const char *str);
 */
 
 static int
-set_error(int error){
+set_error(int error) {
 	static int value = ER_NO;
 
 	if(error){
@@ -183,13 +188,13 @@ set_error(int error){
 
 static Block g_token_block = {0};
 static void 
-token_push(Token **arr, Token tok){
+token_push(Token **arr, Token tok) {
 
-	if(g_token_block.slice.size == 0){
+	if(g_token_block.slice.size == 0) {
 		g_token_block = slice_block_init(TOKEN_BLOCK_SIZE);
 	}
 
-	if(*arr == NULL){
+	if(*arr == NULL) {
 		*arr = g_token_block.slice.bytes;
 	}
 
@@ -198,17 +203,17 @@ token_push(Token **arr, Token tok){
 }
 
 static void
-token_finish(void){
+token_finish(void) {
 	memset(g_token_block.slice.bytes, 0, TOKEN_BLOCK_SIZE);
 	slice_block_deinit(&g_token_block);
 }
 
 int
-carnivore_get_error(void){
+carnivore_get_error(void) {
 	return set_error(0);
 }
 
-char *carnivore_get_error_str(void){
+char *carnivore_get_error_str(void) {
 	char *strs[] = {
 		"no error",
 		"statement with no effect",
@@ -220,12 +225,21 @@ char *carnivore_get_error_str(void){
 }
 
 Token
-*carnivore_tokenize(char *str){
+*carnivore_tokenize(char *str) {
 	Token *result = NULL;
 	char const* head = str;
 	char const* end = str + strlen(str);
 
 	while(head < end){
+
+		if(head == str){
+			Token tok = {
+				.type = LINE_INIT,
+				.start = head,
+				.end = head
+			};
+			token_push(&result, tok);
+		}
 
 		while(
 			head[0] == ' '	||
@@ -237,7 +251,7 @@ Token
 
 		if(head[0] == '\0') break;
 
-		if(head[0] == '.' && head[1] >= '0' && head[1] <= '9'){
+		if(head[0] == '.' && head[1] >= '0' && head[1] <= '9') {
 			char const* float_start = head;
 			do
 				++head;
@@ -253,16 +267,16 @@ Token
 			continue;
 		}
 
-		if(head[0] >= '0' && head[0] <= '9'){
+		if(head[0] >= '0' && head[0] <= '9') {
 			bool is_float = false;
 			char const* num_start = head;
 			do{
 				++head;
-				if(is_float == false && head[0] == '.'){
+				if(is_float == false && head[0] == '.') {
 					is_float = true;
 					++head;
 					continue;
-				} else if (is_float && head[0] == '.'){
+				} else if (is_float && head[0] == '.') {
 					set_error(ER_FLOAT_PARSE);
 					return NULL;
 				}
@@ -278,15 +292,15 @@ Token
 			continue;
 		}
 
-		if(head[0] == '"' && head[1] != '\n'){
+		if(head[0] == '"' && head[1] != '\n') {
 			char const* str_start = head;
-			do{
+			do {
 				++head;
-				if(head[0] == '\\' && head[1] == '"'){
+				if(head[0] == '\\' && head[1] == '"') {
 					head += 2;
 					continue;
 				}
-				if(head[0] == '\n'){
+				if(head[0] == '\n') {
 					//TODO: debug mode flag and multiline strings
 					assert(0 && "carnivore is WIP and debug mode is activated");
 					break;
@@ -301,6 +315,28 @@ Token
 				.type = TYPE_STR,
 				.start = str_start,
 				.end = str_end
+			};
+			token_push(&result, tok);
+			++head;
+			continue;
+		}
+
+		if(head[0] == '[' && head[1] != '\n'){
+			char const* proc_start = head;
+			do {
+				++head;
+				if(head[0] == '\n') {
+					//TODO: error for incomplete procedure declarations
+					assert(0 && "incomplete procedure declaration");
+					break;
+				}
+			}while(head[0] != ']');
+			char const* proc_end = head;
+
+			Token tok = {
+				.type = PROCEDURE,
+				.start = proc_start,
+				.end = proc_end
 			};
 			token_push(&result, tok);
 			++head;
@@ -333,7 +369,7 @@ Token
 
 		int op_type = TYPE_NULL;
 		
-		switch(head[0]){
+		switch(head[0]) {
 			case '=':
 				op_type = EQUAL;
 			break;
@@ -351,8 +387,8 @@ Token
 		if(op_type != TYPE_NULL){
 			char const* op_start = head;
 			++head;
-			if(head[0] == '='){
-				switch(op_type){
+			if(head[0] == '=') {
+				switch(op_type) {
 					case EQUAL:
 						op_type = EQUAL_EQUAL;
 						break;
@@ -377,7 +413,7 @@ Token
 			continue;
 		}
 		
-		switch(head[0]){
+		switch(head[0]) {
 			case '+':
 				op_type = PLUS;
 				break;
@@ -392,7 +428,7 @@ Token
 				break;
 		}
 
-		if(op_type != TYPE_NULL){
+		if(op_type != TYPE_NULL) {
 			Token tok = {
 				.type = op_type,
 				.start = head,
@@ -403,7 +439,7 @@ Token
 			continue;
 		}
 
-		switch(head[0]){
+		switch(head[0]) {
 			case '[':
 				op_type = LEFT_BRACKET;
 				break;
@@ -461,7 +497,7 @@ Token
 			
 		}
 
-		if(op_type != TYPE_NULL){
+		if(op_type != TYPE_NULL) {
 			Token tok = {
 				.type = op_type,
 				.start = head,
@@ -477,10 +513,10 @@ Token
 }
 
 void 
-*carnivore_debug_tokens(Token *tokens){
+*carnivore_debug_tokens(Token *tokens) {
 	assert(tokens != NULL);
 
-	while(tokens->type != TYPE_NULL){
+	while(tokens->type != TYPE_NULL) {
 		printf("{ \"%s\" } ", g_lexiom[tokens->type].str);
 		tokens++;
 	}
@@ -488,7 +524,7 @@ void
 }
 
 void
-carnivore_run(const char *str){
+carnivore_run(const char *str) {
 	(void) str;
 
 	bool has_error = false; // error handling
