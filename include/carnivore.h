@@ -11,7 +11,123 @@
 #include <sys/stat.h>
 #include <assert.h>
 
+// it's not a token it's a size fot the token block!
 #define TOKEN_BLOCK_SIZE (sizeof(Token) * (1 << 16))
+
+#define ARRLEN(X) (sizeof(X) / sizeof((X)[0]))
+
+typedef enum {
+	// End token
+	TOKEN_END,
+	
+	// Initialization token
+	TOKEN_INIT,
+
+	// Literals
+	TOKEN_NULL,
+	TOKEN_INT,
+	TOKEN_FLOAT,
+	TOKEN_STR,
+	TOKEN_LIST,
+	TOKEN_DATE,
+	TOKEN_PATH,
+	
+	// Single character tokens
+	TOKEN_LEFT_BRACKET,			//[]
+	TOKEN_RIGHT_BRACKET,
+	TOKEN_LEFT_PAREN,			//()
+	TOKEN_RIGHT_PAREN,
+	TOKEN_LEFT_BRACE,			//{}
+	TOKEN_RIGHT_BRACE,
+	TOKEN_COMMA,
+	TOKEN_DOT,
+	TOKEN_MINUS,
+	TOKEN_PLUS,
+	TOKEN_COLON,
+	TOKEN_SEMICOLON,
+	TOKEN_SLASH,				/* /  */
+	TOKEN_BACK_SLASH,			/* \ */
+	TOKEN_BACK_TICK,			/* ` */
+	TOKEN_AMPERSAND,			// &
+	TOKEN_STAR,
+	TOKEN_EQUAL,
+	TOKEN_BANG,
+	TOKEN_GREATER,
+	TOKEN_LESS,
+	TOKEN_SINGLE_QUOTE,
+	TOKEN_DOUBLE_QUOTE,
+	TOKEN_AT_SIGN,				// @
+	TOKEN_HASH_SIGN,			// #
+	TOKEN_DOLLAR_SIGN,			// $
+	TOKEN_PERCENT_SIGN,			// %
+	
+	// Two character operators
+	TOKEN_EQUAL_EQUAL,
+	TOKEN_BANG_EQUAL,
+	TOKEN_GREATER_EQUAL,
+	TOKEN_LESS_EQUAL,
+
+	TOKEN_IDENTIFIER
+}TokenType;
+
+static const char* g_token_names[] = {
+
+	// Line initialization token
+	[TOKEN_INIT] = 	"token init",
+
+	// Literal tokens
+	[TOKEN_NULL]  =	"(null)",
+	[TOKEN_INT]   =	"int",
+	[TOKEN_FLOAT] = "float",
+	[TOKEN_STR]   =	"str",
+	[TOKEN_LIST]  =	"list",
+	[TOKEN_DATE]  =	"date",
+	[TOKEN_PATH]  =	"path",
+	
+	// Single character tokens
+	[TOKEN_LEFT_BRACKET]  =	"[",
+	[TOKEN_RIGHT_BRACKET] =	"]",
+	[TOKEN_LEFT_PAREN] 	  =	"(",
+	[TOKEN_RIGHT_PAREN]   =	")",
+	[TOKEN_LEFT_BRACE] 	  =	"{",
+	[TOKEN_RIGHT_BRACE]   =	"}",
+	[TOKEN_COMMA]		  =	",",
+	[TOKEN_DOT]			  =	".",
+	[TOKEN_MINUS]		  =	"-",
+	[TOKEN_PLUS]		  =	"+",
+	[TOKEN_COLON] 		  =	":",
+	[TOKEN_SEMICOLON]	  =	";",
+	[TOKEN_SLASH]		  =	"/",
+	[TOKEN_BACK_SLASH]	  =	"\\",
+	[TOKEN_BACK_TICK]	  =	"`",
+	[TOKEN_AMPERSAND]	  =	"&",
+	[TOKEN_STAR]		  =	"*",
+	[TOKEN_EQUAL] 		  =	"=",
+	[TOKEN_BANG] 		  =	"!",
+	[TOKEN_GREATER]		  =	">",
+	[TOKEN_LESS] 		  =	"<",
+	[TOKEN_SINGLE_QUOTE]  =	"'",
+	[TOKEN_DOUBLE_QUOTE]  =	"\"",
+	[TOKEN_AT_SIGN]		  =	"@",
+	[TOKEN_HASH_SIGN]	  =	"#",		
+	[TOKEN_DOLLAR_SIGN]	  =	"$",
+	[TOKEN_PERCENT_SIGN]  = "%",
+
+	// Double character tokens
+	[TOKEN_EQUAL_EQUAL]  	= "==",
+	[TOKEN_BANG_EQUAL]	 	= "!=",
+	[TOKEN_GREATER_EQUAL]	= ">=",
+	[TOKEN_LESS_EQUAL]		= "<=",
+	
+	[TOKEN_IDENTIFIER]	"identifier",
+	""
+};
+
+typedef struct {
+	int type;
+	char const* start;
+	char const* end;
+}Token;
 
 typedef enum {
 	// Types
@@ -26,132 +142,77 @@ typedef enum {
 	TYPE_LIST,
 	TYPE_TYPE,
 	TYPE_ARG,
+	TYPE_STRUCT,
 
-	// Line initialization token
-	LINE_INIT,
+	// Flow control
+	FLOW_IF,
+	FLOW_DO,
+	FLOW_WHILE,
+	FLOW_FOR,
+	FLOW_FOREACH,
+	FLOW_BREAK,
+	FLOW_BREAKTO,
+	FLOW_CONTINUE,
+	FLOW_LABEL,
+	FLOW_SWITCH,
+	FLOW_CASE,
+	FLOW_DEFAULT,
 
-	// Single character tokens
-	LEFT_BRACKET,			//[]
-	RIGHT_BRACKET,
-	LEFT_PAREN,				//()
-	RIGHT_PAREN,
-	LEFT_BRACE,				//{}
-	RIGHT_BRACE,
-	COMMA,
-	DOT,
-	MINUS,
-	PLUS,
-	COLON,
-	SEMICOLON,
-	SLASH,				/* /  */
-	BACK_SLASH,			/* \ */
-	BACK_TICK,
-	AMPERSAND,			// &
-	STAR,
-	EQUAL,
-	BANG,
-	GREATER,
-	LESS,
-	SINGLE_QUOTE,
-	DOUBLE_QUOTE,
-	AT_SIGN,			// @
-	HASH_SIGN,			// #
-	DOLLAR_SIGN,		// $
-	PERCENT_SIGN,		// %
-	// Two character operators
-	EQUAL_EQUAL,
-	BANG_EQUAL,
-	GREATER_EQUAL,
-	LESS_EQUAL,
+	// Modifiers
+	MOD_LOCAL,
+	MOD_CONST,
+	MOD_LIMIT,
+	MOD_VOLATILE,
+	MOD_REGISTER,
 
-	// Literals
-	IDENTIFIER,
-	DATE,
-	PATH,
-	
-	PROCEDURE,
-	FUNCTION,
-}TokenType;
+	// Meta operations
+	META_IMPORT,
+	META_TYPEDEF
+}Keywords;
 
-typedef struct {
-	TokenType type;
-	char const* start;
-	char const* end;
-}Token;
+static const char *g_keywords[] = {
 
-typedef struct {
-	TokenType type;
-	char *str;
-}Lexn;
+	// Types
+	[TYPE_NULL] = "(null)",
+	[TYPE_BOOL] = "bool",
+	[TYPE_INT] = "int",
+	[TYPE_UINT] = "uint",
+	[TYPE_FLOAT] = "float",
+	[TYPE_STR] = "str",
+	[TYPE_DATE] = "date",
+	[TYPE_PATH] = "path",
+	[TYPE_LIST] = "list",
+	[TYPE_TYPE] = "type",
+	[TYPE_ARG] = "arg",
+	[TYPE_STRUCT] = "struct",
 
-static const Lexn g_lexiom[] = {
-	{TYPE_NULL, 	"(null)"},
-	{TYPE_BOOL, 	"bool"},
-	{TYPE_INT, 		"int"},
-	{TYPE_UINT, 	"uint"},
-	{TYPE_FLOAT, 	"float"},
-	{TYPE_STR, 		"str"},
-	{TYPE_DATE, 	"date"},
-	{TYPE_PATH, 	"path"},
-	{TYPE_LIST, 	"list"},
-	{TYPE_TYPE, 	"type"},
-	{TYPE_ARG, 		"arg"},
+	// flow control
+	[FLOW_IF] = "if",
+	[FLOW_DO] = "do",
+	[FLOW_WHILE] = "while",
+	[FLOW_FOR] = "for",
+	[FLOW_FOREACH] = "foreach",
+	[FLOW_BREAK] = "break",
+	[FLOW_BREAKTO] = "breakto",
+	[FLOW_LABEL] = "label",
+	[FLOW_CONTINUE] = "continue",
+	[FLOW_SWITCH] = "switch",
+	[FLOW_CASE] = "case",
+	[FLOW_DEFAULT] = "default",
 
-	{LINE_INIT, 	"line init"},
+	// modifiers
+	[MOD_LOCAL] = "local",
+	[MOD_CONST] = "const",
+	[MOD_LIMIT] = "limit",
+	[MOD_VOLATILE] = "volatile",
+	[MOD_REGISTER] = "register",
 
-	{LEFT_BRACKET, 	"["},
-	{RIGHT_BRACKET,	"]"},
-	{LEFT_PAREN, 	"("},
-	{RIGHT_PAREN, 	")"},
-	{LEFT_BRACE, 	"{"},
-	{RIGHT_BRACE, 	"}"},
-	{COMMA,			","},
-	{DOT,			"."},
-	{MINUS,			"-"},
-	{PLUS,			"+"},
-	{COLON, 		":"},
-	{SEMICOLON,		";"},
-	{SLASH,			"/"},
-	{BACK_SLASH,	"\\"},
-	{BACK_TICK,		"`"},
-	{AMPERSAND,		"&"},
-	{STAR,			"*"},
-
-	{EQUAL,			"="},
-	{BANG,			"!"},
-	{GREATER,		">"},
-	{LESS,			"<"},
-	{SINGLE_QUOTE,	"'"},
-	{DOUBLE_QUOTE,	"\""},
-	{AT_SIGN,		"@"},
-	{HASH_SIGN,		"#"},		
-	{DOLLAR_SIGN,	"$"},
-	{PERCENT_SIGN,	"%"},
-
-	{EQUAL_EQUAL,	"=="},
-	{BANG_EQUAL,	"!="},
-	{GREATER_EQUAL,	">="},
-	{LESS_EQUAL,	"<="},
-	{IDENTIFIER,	"identifier"},
-	{DATE,			"date"},
-	{PATH,			"path"},
-	{PROCEDURE, 	"procedure"},
-	{FUNCTION, 		"function"}
+	// meta operations
+	[META_IMPORT] = "import",
+	[META_TYPEDEF] = "typedef",
+	""
 };
 
-static const char *g_keyword_types[] = {
-	"(null)",
-	"bool",
-	"int",
-	"uint",
-	"float",
-	"str",
-	"date",
-	"path",
-	"list",
-	"type",
-	"arg",
-};
 
 enum {
 	ER_NO,
@@ -159,7 +220,6 @@ enum {
 	ER_FLOAT_PARSE,
 	ER_EQUAL_PARSE
 }ErrorType;
-
 
 static int set_error(int error);
 static void token_push(Token **arr, Token tok);
@@ -215,10 +275,10 @@ carnivore_get_error(void) {
 
 char *carnivore_get_error_str(void) {
 	char *strs[] = {
-		"no error",
-		"statement with no effect",
-		"float parsing error",
-		"extra '=' detected"
+		[ER_NO] 		  = "no error",
+		[ER_IDENTIFIER]	  =	 "statement with no effect",
+		[ER_FLOAT_PARSE]  =	"float parsing error",
+		[ER_EQUAL_PARSE]  =	"extra '=' detected"
 	};
 
 	return strs[carnivore_get_error()];
@@ -234,7 +294,7 @@ Token
 
 		if(head == str){
 			Token tok = {
-				.type = LINE_INIT,
+				.type = TOKEN_INIT,
 				.start = head,
 				.end = head
 			};
@@ -259,7 +319,7 @@ Token
 			char const* float_end = head;
 
 			Token tok = {
-				.type = TYPE_FLOAT,
+				.type = TOKEN_FLOAT,
 				.start = float_start,
 				.end = float_end
 			};
@@ -284,7 +344,7 @@ Token
 			char const* num_end = head;
 
 			Token tok = {
-				.type = is_float ? TYPE_FLOAT : TYPE_INT,
+				.type = is_float ? TOKEN_FLOAT : TOKEN_INT,
 				.start = num_start,
 				.end = num_end
 			};
@@ -312,7 +372,7 @@ Token
 			char const* str_end = head;
 
 			Token tok = {
-				.type = TYPE_STR,
+				.type = TOKEN_STR,
 				.start = str_start,
 				.end = str_end
 			};
@@ -326,15 +386,15 @@ Token
 			do {
 				++head;
 				if(head[0] == '\n') {
-					//TODO: error for incomplete procedure declarations
-					assert(0 && "incomplete procedure declaration");
+					//TODO: error for incomplete list declarations
+					assert(0 && "incomplete list declaration");
 					break;
 				}
 			}while(head[0] != ']');
 			char const* proc_end = head;
 
 			Token tok = {
-				.type = PROCEDURE,
+				.type = TOKEN_LIST,
 				.start = proc_start,
 				.end = proc_end
 			};
@@ -359,7 +419,7 @@ Token
 			char const* ifi_end = head;
 
 			Token tok = {
-				.type = IDENTIFIER,
+				.type = TOKEN_IDENTIFIER,
 				.start = ifi_start,
 				.end = ifi_end
 			};
@@ -367,39 +427,39 @@ Token
 			continue;
 		}
 
-		int op_type = TYPE_NULL;
+		int op_type = TOKEN_NULL;
 		
 		switch(head[0]) {
 			case '=':
-				op_type = EQUAL;
+				op_type = TOKEN_EQUAL;
 			break;
 			case '!':
-				op_type = BANG;
+				op_type = TOKEN_BANG;
 			break;
 			case '>':
-				op_type = GREATER;
+				op_type = TOKEN_GREATER;
 			break;
 			case '<':
-				op_type = LESS;
+				op_type = TOKEN_LESS;
 			break;
 		}
 
-		if(op_type != TYPE_NULL){
+		if(op_type != TOKEN_NULL){
 			char const* op_start = head;
 			++head;
 			if(head[0] == '=') {
 				switch(op_type) {
-					case EQUAL:
-						op_type = EQUAL_EQUAL;
+					case TOKEN_EQUAL:
+						op_type = TOKEN_EQUAL_EQUAL;
 						break;
-					case BANG:
-						op_type = BANG_EQUAL;
+					case TOKEN_BANG:
+						op_type = TOKEN_BANG_EQUAL;
 						break;
-					case GREATER:
-						op_type = GREATER_EQUAL;
+					case TOKEN_GREATER:
+						op_type = TOKEN_GREATER_EQUAL;
 						break;
-					case LESS:
-						op_type = LESS_EQUAL;
+					case TOKEN_LESS:
+						op_type = TOKEN_LESS_EQUAL;
 						break;
 				}
 				++head;
@@ -412,92 +472,79 @@ Token
 			token_push(&result, tok);
 			continue;
 		}
-		
+
+		// Single character tokens
 		switch(head[0]) {
 			case '+':
-				op_type = PLUS;
+				op_type = TOKEN_PLUS;
 				break;
 			case '-':
-				op_type = MINUS;
+				op_type = TOKEN_MINUS;
 				break;
 			case '*':
-				op_type = STAR;
+				op_type = TOKEN_STAR;
 				break;
 			case '/':
-				op_type = SLASH;
+				op_type = TOKEN_SLASH;
 				break;
-		}
-
-		if(op_type != TYPE_NULL) {
-			Token tok = {
-				.type = op_type,
-				.start = head,
-				.end = head
-			};
-			++head;
-			token_push(&result, tok);
-			continue;
-		}
-
-		switch(head[0]) {
 			case '[':
-				op_type = LEFT_BRACKET;
+				op_type = TOKEN_LEFT_BRACKET;
 				break;
 			case ']':
-				op_type = RIGHT_BRACKET;
+				op_type = TOKEN_RIGHT_BRACKET;
 				break;
 			case '(':
-				op_type = LEFT_PAREN;
+				op_type = TOKEN_LEFT_PAREN;
 				break;
 			case ')':
-				op_type = RIGHT_PAREN;
+				op_type = TOKEN_RIGHT_PAREN;
 				break;
 			case '{':
-				op_type = LEFT_BRACE;
+				op_type = TOKEN_LEFT_BRACE;
 				break;
 			case '}':
-				op_type = RIGHT_BRACE;
+				op_type = TOKEN_RIGHT_BRACE;
 				break;
 			case ',':
-				op_type = COMMA;
+				op_type = TOKEN_COMMA;
 				break;
 			case '.':
-				op_type = DOT;
+				op_type = TOKEN_DOT;
 				break;
 			case ';':
-				op_type = SEMICOLON;
+				op_type = TOKEN_SEMICOLON;
 				break;
 			case '\\':
-				op_type = BACK_SLASH;
+				op_type = TOKEN_BACK_SLASH;
 				break;
 			case '\'':
-				op_type = SINGLE_QUOTE;
+				op_type = TOKEN_SINGLE_QUOTE;
 				break;
 			case '"':
-				op_type = DOUBLE_QUOTE;
+				op_type = TOKEN_DOUBLE_QUOTE;
 				break;
 			case '@':
-				op_type = AT_SIGN;
+				op_type = TOKEN_AT_SIGN;
 				break;
 			case '`':
-				op_type = BACK_TICK;
+				op_type = TOKEN_BACK_TICK;
 				break;
 			case '&':
-				op_type = AMPERSAND;
+				op_type = TOKEN_AMPERSAND;
 				break;
 			case '#':
-				op_type = HASH_SIGN;
+				op_type = TOKEN_HASH_SIGN;
 				break;
 			case '$':
-				op_type = DOLLAR_SIGN;
+				op_type = TOKEN_DOLLAR_SIGN;
 				break;
 			case '%':
-				op_type = PERCENT_SIGN;
+				op_type = TOKEN_PERCENT_SIGN;
 				break;
 			
 		}
 
-		if(op_type != TYPE_NULL) {
+		if(op_type != TOKEN_NULL) {
 			Token tok = {
 				.type = op_type,
 				.start = head,
@@ -516,8 +563,8 @@ void
 *carnivore_debug_tokens(Token *tokens) {
 	assert(tokens != NULL);
 
-	while(tokens->type != TYPE_NULL) {
-		printf("{ \"%s\" } ", g_lexiom[tokens->type].str);
+	while(tokens->type != TOKEN_END) {
+		printf("{ \"%s\" } ", g_token_names[tokens->type]);
 		tokens++;
 	}
 	printf("\n");
