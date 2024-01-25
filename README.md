@@ -1,5 +1,5 @@
 # <img src="carnivore-logo.svg" alt="drawing" width="60" hight="60"/> Carnivore
-Carnivore is a simple scripting language based in [toml](https://toml.io/en/).
+Carnivore is a simple scripting language written in C.
 
 ## Work in progress
 - [x] cli interface skeleton
@@ -22,3 +22,6 @@ Carnivore is a simple scripting language based in [toml](https://toml.io/en/).
 	* The main is for the carnivore behaviour as an interpreter!
 	* No parser, lexer or any other carnivore internal can be defined in main!
 	
+## References
+ - [Lua](https://github.com/lua/lua)
+ - [Python](https://github.com/python/cpython)

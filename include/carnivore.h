@@ -60,6 +60,10 @@ typedef enum {
 	TOKEN_HASH_SIGN,			// #
 	TOKEN_DOLLAR_SIGN,			// $
 	TOKEN_PERCENT_SIGN,			// %
+	TOKEN_CARET,
+	TOKEN_TILDE,
+	TOKEN_QUESTION_MARK,
+	TOKEN_VERTICAL_BAR,
 	
 	// Two character operators
 	TOKEN_EQUAL_EQUAL,
@@ -112,6 +116,10 @@ static const char* g_token_names[] = {
 	[TOKEN_HASH_SIGN]	  =	"#",		
 	[TOKEN_DOLLAR_SIGN]	  =	"$",
 	[TOKEN_PERCENT_SIGN]  = "%",
+	[TOKEN_CARET] 		  = "^",
+	[TOKEN_TILDE]		  = "~",
+	[TOKEN_QUESTION_MARK] = "?",
+	[TOKEN_VERTICAL_BAR]  = "|",
 
 	// Double character tokens
 	[TOKEN_EQUAL_EQUAL]  	= "==",
@@ -511,6 +519,9 @@ Token
 			case '.':
 				op_type = TOKEN_DOT;
 				break;
+			case ':':
+				op_type = TOKEN_COLON;
+				break;
 			case ';':
 				op_type = TOKEN_SEMICOLON;
 				break;
@@ -541,7 +552,20 @@ Token
 			case '%':
 				op_type = TOKEN_PERCENT_SIGN;
 				break;
-			
+			case '^':
+				op_type = TOKEN_CARET;
+				break;
+			case '~':
+				op_type = TOKEN_TILDE;
+				break;
+			case '?':
+				op_type = TOKEN_QUESTION_MARK;
+				break;
+			case '|':
+				op_type = TOKEN_VERTICAL_BAR;
+				break;
+			default:
+				assert(0 && "unknown character");
 		}
 
 		if(op_type != TOKEN_NULL) {
