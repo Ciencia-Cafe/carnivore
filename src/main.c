@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 					}
 					Token *tokens = carnivore_tokenize(line_buffer);
 					carnivore_debug_tokens(tokens); // debug mode
-					token_finish();
+					carnivore_free_tokens();
 					line_buffer[0] = 0;
 				}
 				

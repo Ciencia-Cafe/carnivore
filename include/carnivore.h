@@ -231,7 +231,7 @@ enum {
 
 static int set_error(int error);
 static void token_push(Token **arr, Token tok);
-static void token_finish(void);
+void carnivore_free_tokens(void);
 int carnivore_get_error(void);
 char *carnivore_get_error_str(void);
 Token *carnivore_tokenize(char *str);
@@ -270,8 +270,8 @@ token_push(Token **arr, Token tok) {
 	memcpy(tok_slice.bytes, &tok, sizeof(tok));
 }
 
-static void
-token_finish(void) {
+void
+carnivore_free_tokens(void) {
 	memset(g_token_block.slice.bytes, 0, TOKEN_BLOCK_SIZE);
 	slice_block_deinit(&g_token_block);
 }
