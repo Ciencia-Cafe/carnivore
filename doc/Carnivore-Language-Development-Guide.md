@@ -5,8 +5,6 @@ This guide is for use of the contributtors to the language development itself, t
 The directory structure may change in the future but currently it has to be like this:
 
 - carnivore
-	- LICENSE
-	- README.md
 	- doc
 	- include
 	- src
