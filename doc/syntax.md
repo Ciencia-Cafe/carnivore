@@ -4,7 +4,7 @@
 print ["Hello world!"]
 ```
 
- - Functions take a list of variables matching its types, the print function is an internal type and prints to the console according to the list of variables given.
+ - Functions take a list of variables matching its types, the print is an internal function and prints to the console according to the list of variables given.
 ```
 calc_fib [n int] return int {
 	[p0, p1] int = [0, 1]
